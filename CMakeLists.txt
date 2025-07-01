@@ -13,6 +13,7 @@ set(CMAKE_CXX_FLAGS "-std=c++14 -Wall -fopenmp -march=native -pthread")
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -march=native")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=native -O3")
 set(CMAKE_CXX_FLAGS_DEBUG  "${CMAKE_CXX_FLAGS} -g")
+set(OpenCV_DIR "/usr/local/opencv3.4.13")
 # Check C++11 or C++0x support
 
 # include(CheckCXXCompilerFlag)
@@ -35,6 +36,7 @@ LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
 # 要保证整个工程的opencv版本一致，包括dbow，源码以及ros相关的
 # 3 4 都可以正常运行//必须要opencv3.4.13,要不然会在加载词袋处卡住
 
+#find_package(OpenCV 4.2.0 REQUIRED)
 find_package(OpenCV 3.4.13 REQUIRED)
    if(NOT OpenCV_FOUND)
       message(FATAL_ERROR "OpenCV > 3.2 not found.")
@@ -60,7 +62,7 @@ ${PROJECT_SOURCE_DIR}/include
 ${PROJECT_SOURCE_DIR}/include/CameraModels
 ${PROJECT_SOURCE_DIR}/Thirdparty/Sophus
 ${EIGEN3_INCLUDE_DIR}
-/media/xiao/data3/learning-slam/onnxruntime-linux-x64-gpu-1.16.3/include
+/home/zimin/ThirdParty/onnxruntime-linux-x64-gpu-1.16.3/include
 ${CUDA_INCLUDE_DIRS}
 ${Boost_INCLUDE_DIRS}
 ${YAML_CPP_INCLUDE_DIR}
@@ -158,7 +160,7 @@ ${PROJECT_SOURCE_DIR}/Thirdparty/DBoW3/lib/libDBoW3.so
 ${PROJECT_SOURCE_DIR}/Thirdparty/g2o/lib/libg2o.so
 -lboost_serialization
 -lcrypto
-/usr/local/lib/libonnxruntime.so
+/home/zimin/ThirdParty/onnxruntime-linux-x64-gpu-1.16.3/lib/libonnxruntime.so
 )
 
 
@@ -204,3 +206,9 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/Stereo-Inertia
 add_executable(stereo_inertial_euroc
         Examples/Stereo-Inertial/stereo_inertial_euroc.cc)
 target_link_libraries(stereo_inertial_euroc ${PROJECT_NAME})
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/RGB-D)
+
+add_executable(rgbd_tum
+        Examples/RGB-D/rgbd_tum.cc)
+target_link_libraries(rgbd_tum ${PROJECT_NAME})

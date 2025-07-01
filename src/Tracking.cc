@@ -643,7 +643,7 @@ void Tracking::newParameterLoader(Settings *settings) {
     // _superpoint->super_point_config_.onnx_file = "/home/xiao/catkin_ws/src/AirVO/output/superpoint_v1_sim_int32.onnx";
 
     mpExtractorLeft = new SPextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
-
+    std::cout << "646 ##################################" << std::endl;
     if(mSensor==System::STEREO || mSensor==System::IMU_STEREO)
        mpExtractorRight = new SPextractor(5*nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
 
@@ -1338,7 +1338,7 @@ bool Tracking::ParseORBParamFile(cv::FileStorage &fSettings)
     {
         return false;
     }
-
+    std::cout << "1341 ##################################" << std::endl;
     //mpORBextractorLeft = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
     mpExtractorLeft = new SPextractor(5*nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
     if(mSensor==System::STEREO || mSensor==System::IMU_STEREO)
@@ -1656,20 +1656,48 @@ Sophus::SE3f Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, co
         else
             cvtColor(mImGray,mImGray,cv::COLOR_BGRA2GRAY);
     }
-
+    std::cout << "1659 GrabImageRGBD: " << std::endl;
     // Step 2 ：将深度相机的disparity转为Depth , 也就是转换成为真正尺度下的深度
     if((fabs(mDepthMapFactor-1.0f)>1e-5) && imDepth.type()!=CV_32F)
         imDepth.convertTo(imDepth,CV_32F,mDepthMapFactor);
-
+    std::cout << "1663 GrabImageRGBD: " << std::endl;
     // Step 3：构造Frame
+    // if (mSensor == System::RGBD)
+    //     mCurrentFrame = Frame(mImGray,imDepth,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera);
+    // else if(mSensor == System::IMU_RGBD)
+    //     mCurrentFrame = Frame(mImGray,imDepth,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera,&mLastFrame,*mpImuCalib);
+    
     if (mSensor == System::RGBD)
-        mCurrentFrame = Frame(mImGray,imDepth,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera);
-    else if(mSensor == System::IMU_RGBD)
-        mCurrentFrame = Frame(mImGray,imDepth,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera,&mLastFrame,*mpImuCalib);
+    {
+        if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET ||(lastID - initID) < mMaxFrames)
+        {
+            std::cout << "1111111111111111111111111111111111111111111111111111111" << std::endl;
+            mCurrentFrame = Frame(mImGray,imDepth,timestamp,mpExtractorLeft,mpSPVocabulary,mK,mDistCoef,mbf,mThDepth, mpCamera);
+            
+        }
+        else {
+            std::cout << "2222222222222222222222222222222222222222222222222222222" << std::endl;
+            mCurrentFrame = Frame(mImGray,imDepth, timestamp,mpExtractorLeft,mpSPVocabulary,mK,mDistCoef,mbf,mThDepth, mpCamera);
+        }
+    }  
+    // else if(mSensor == System::IMU_RGBD)
+    // {
+    //     // 判断该帧是不是初始化
+    //     if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET)  //没有成功初始化的前一个状态就是NO_IMAGES_YET
+    //     {
+    //         mCurrentFrame = Frame(mImGray,timestamp,mpIniExtractor,mpSPVocabulary,mpCamera,mDistCoef,mbf,mThDepth,&mLastFrame,*mpImuCalib);
+    //     }
+    //     else
+    //         mCurrentFrame = Frame(mImGray,timestamp,mpIniExtractor,mpSPVocabulary,mpCamera,mDistCoef,mbf,mThDepth,&mLastFrame,*mpImuCalib);
+    // }
 
+    
+    
+    
+    std::cout << "1669 GrabImageRGBD: " << std::endl;
     mCurrentFrame.mNameFile = filename;
     mCurrentFrame.mnDataset = mnNumDataset;
-
+    std::cout << "1672 GrabImageRGBD: " << std::endl;
 #ifdef REGISTER_TIMES
     vdORBExtract_ms.push_back(mCurrentFrame.mTimeORB_Ext);
 #endif
@@ -1723,9 +1751,14 @@ Sophus::SE3f Tracking::GrabImageMonocular(const cv::Mat &im, const double &times
     if (mSensor == System::MONOCULAR)
     {
         if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET ||(lastID - initID) < mMaxFrames)
+        {
             mCurrentFrame = Frame(mImGray,timestamp,mpIniExtractor,mpSPVocabulary,mpCamera,mDistCoef,mbf,mThDepth);
-        else
+            std::cout << "1111111111111111111111111111111111111111111111111111111" << std::endl;
+        }
+        else {
             mCurrentFrame = Frame(mImGray,timestamp,mpExtractorLeft,mpSPVocabulary,mpCamera,mDistCoef,mbf,mThDepth);
+            std::cout << "22222222222222222222222222222222222222222222222222222222" << std::endl;
+        }
     }
 
     else if(mSensor == System::IMU_MONOCULAR)

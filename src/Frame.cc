@@ -122,7 +122,7 @@ Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeSt
     mfLogScaleFactor = log(mfScaleFactor);
     // // 获取每层图像的缩放因子
     mvScaleFactors = mpExtractorLeft->GetScaleFactors();
-    // // 同样获取每层图像缩放因子的倒数
+    // // 同样获取每层图像缩放因子的倒数SPextractor
     mvInvScaleFactors = mpExtractorLeft->GetInverseScaleFactors();
     // // 高斯模糊的时候，使用的方差
     mvLevelSigma2 = mpExtractorLeft->GetScaleSigmaSquares();
@@ -248,25 +248,32 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeSt
     // Frame ID
     // Step 1 帧的ID 自增
     mnId=nNextId++;
-
+    std::cout << (mpORBextractorLeft == nullptr) << std::endl;
     // Scale Level Info
     // Step 2 计算图像金字塔的参数 
 	// 获取图像金字塔的层数
     mnScaleLevels = mpORBextractorLeft->GetLevels();
+    std::cout << "256 Frame" << std::endl;
     // 获得层与层之间的缩放比
     mfScaleFactor = mpORBextractorLeft->GetScaleFactor();
+    std::cout << "259 Frame" << std::endl;
     // 计算上面缩放比的对数
     mfLogScaleFactor = log(mfScaleFactor);
+
+    std::cout << "261 Frame" << std::endl;
     // 获取每层图像的缩放因子
     mvScaleFactors = mpORBextractorLeft->GetScaleFactors();
     // 同样获取每层图像缩放因子的倒数
     mvInvScaleFactors = mpORBextractorLeft->GetInverseScaleFactors();
+
+    std::cout << "267 Frame" << std::endl;
+
     // 高斯模糊的时候，使用的方差
     mvLevelSigma2 = mpORBextractorLeft->GetScaleSigmaSquares();
     // 获取sigma^2的倒数
     mvInvLevelSigma2 = mpORBextractorLeft->GetInverseScaleSigmaSquares();
-
-    // ORB extraction
+    std::cout << "268 Frame" << std::endl;
+    // ORB extractionExtractKeyPoints
 #ifdef REGISTER_TIMES
     std::chrono::steady_clock::time_point time_StartExtORB = std::chrono::steady_clock::now();
 #endif
@@ -349,6 +356,128 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeSt
     // 将特征点分配到图像网格中
     AssignFeaturesToGrid();
 }
+
+// new RGBD
+Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeStamp, SPextractor* mpORBextractorLeft,SPVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, GeometricCamera* pCamera,Frame* pPrevF, const IMU::Calib &ImuCalib)
+    :mpcpi(NULL),mpSPvocabulary(voc),mpExtractorLeft(mpORBextractorLeft),mpExtractorRight(static_cast<SPextractor*>(NULL)),
+     mTimeStamp(timeStamp), mK(K.clone()), mK_(Converter::toMatrix3f(K)),mDistCoef(distCoef.clone()), mbf(bf), mThDepth(thDepth),
+     mImuCalib(ImuCalib), mpImuPreintegrated(NULL), mpPrevFrame(pPrevF), mpImuPreintegratedFrame(NULL), mpReferenceKF(static_cast<KeyFrame*>(NULL)), mbIsSet(false), mbImuPreintegrated(false),
+     mpCamera(pCamera),mpCamera2(nullptr), mbHasPose(false), mbHasVelocity(false)
+{
+    std::cout << "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ " << std::endl;
+    // Frame ID
+    // Step 1 帧的ID 自增
+    mnId=nNextId++;
+    std::cout << (mpExtractorLeft == nullptr) << std::endl;
+    // Scale Level Info
+    // Step 2 计算图像金字塔的参数 
+	// 获取图像金字塔的层数
+    mnScaleLevels = mpExtractorLeft->GetLevels();
+    std::cout << "256 Frame" << std::endl;
+    // 获得层与层之间的缩放比
+    mfScaleFactor = mpExtractorLeft->GetScaleFactor();
+    std::cout << "259 Frame" << std::endl;
+    // 计算上面缩放比的对数
+    mfLogScaleFactor = log(mfScaleFactor);
+
+    std::cout << "261 Frame" << std::endl;
+    // 获取每层图像的缩放因子
+    mvScaleFactors = mpExtractorLeft->GetScaleFactors();
+    // 同样获取每层图像缩放因子的倒数
+    mvInvScaleFactors = mpExtractorLeft->GetInverseScaleFactors();
+
+    std::cout << "267 Frame" << std::endl;
+
+    // 高斯模糊的时候，使用的方差
+    mvLevelSigma2 = mpExtractorLeft->GetScaleSigmaSquares();
+    // 获取sigma^2的倒数
+    mvInvLevelSigma2 = mpExtractorLeft->GetInverseScaleSigmaSquares();
+    std::cout << "268 Frame" << std::endl;
+    // ORB extraction
+#ifdef REGISTER_TIMES
+    std::chrono::steady_clock::time_point time_StartExtORB = std::chrono::steady_clock::now();
+#endif
+    // ExtractORB(0,imGray,0,0);
+    ExtractKeyPoints(0,imGray,0,0);
+#ifdef REGISTER_TIMES
+    std::chrono::steady_clock::time_point time_EndExtORB = std::chrono::steady_clock::now();
+
+    mTimeORB_Ext = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(time_EndExtORB - time_StartExtORB).count();
+#endif
+
+    // 获取特征点的个数
+    N = mvKeys.size();
+
+    // 如果这一帧没有能够提取出特征点，那么就直接返回了
+    if(mvKeys.empty())
+        return;
+
+    // Step 4 用OpenCV的矫正函数、内参对提取到的特征点进行矫正
+    UndistortKeyPoints();
+
+    // Step 5 获取图像的深度，并且根据这个深度推算其右图中匹配的特征点的视差
+    ComputeStereoFromRGBD(imDepth);
+
+    // 初始化本帧的地图点
+    mvpMapPoints = vector<MapPoint*>(N,static_cast<MapPoint*>(NULL));
+
+    mmProjectPoints.clear();
+    mmMatchedInImage.clear();
+
+    // 记录地图点是否为外点，初始化均为外点false
+    mvbOutlier = vector<bool>(N,false);
+
+    // This is done only for the first Frame (or after a change in the calibration)
+    //  Step 5 计算去畸变后图像边界，将特征点分配到网格中。这个过程一般是在第一帧或者是相机标定参数发生变化之后进行
+    if(mbInitialComputations)
+    {
+        // 计算去畸变后图像的边界
+        ComputeImageBounds(imGray);
+
+        // 表示一个图像像素相当于多少个图像网格列（宽）
+        mfGridElementWidthInv=static_cast<float>(FRAME_GRID_COLS)/static_cast<float>(mnMaxX-mnMinX);
+		// 表示一个图像像素相当于多少个图像网格行（高）
+        mfGridElementHeightInv=static_cast<float>(FRAME_GRID_ROWS)/static_cast<float>(mnMaxY-mnMinY);
+
+        fx = K.at<float>(0,0);
+        fy = K.at<float>(1,1);
+        cx = K.at<float>(0,2);
+        cy = K.at<float>(1,2);
+        // 猜测是因为这种除法计算需要的时间略长，所以这里直接存储了这个中间计算结果
+        invfx = 1.0f/fx;
+        invfy = 1.0f/fy;
+
+        // 特殊的初始化过程完成，标志复位
+        mbInitialComputations=false;
+    }
+
+    // 计算假想的基线长度 baseline= mbf/fx
+    // 后面要对从RGBD相机输入的特征点,结合相机基线长度,焦距,以及点的深度等信息来计算其在假想的"右侧图像"上的匹配点
+    mb = mbf/fx;
+
+    if(pPrevF){
+        if(pPrevF->HasVelocity())
+            SetVelocity(pPrevF->GetVelocity());
+    }
+    else{
+        mVw.setZero();
+    }
+
+    mpMutexImu = new std::mutex();
+
+    //Set no stereo fisheye information
+    Nleft = -1;
+    Nright = -1;
+    mvLeftToRightMatch = vector<int>(0);
+    mvRightToLeftMatch = vector<int>(0);
+    mvStereo3Dpoints = vector<Eigen::Vector3f>(0);
+    monoLeft = -1;
+    monoRight = -1;
+
+    // 将特征点分配到图像网格中
+    AssignFeaturesToGrid();
+}
+
 
 // 单目模式
 Frame::Frame(const cv::Mat &imGray, const double &timeStamp, SPextractor* extractor,SPVocabulary* voc, GeometricCamera* pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth, Frame* pPrevF, const IMU::Calib &ImuCalib)
