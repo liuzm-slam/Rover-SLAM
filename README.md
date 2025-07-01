@@ -78,7 +78,9 @@ make -j12
 ```      
 The rest of the operations are the same as ORB-SLAM3
 
+./Examples/RGB-D/rgbd_tum Vocabulary/voc_binary_tartan_8u_6.yml.gz  Examples/RGB-D/TUM1.yaml /media/zimin/T9/SLAM_Datasets/data/TUM-datasets/rgbd_dataset_freiburg1_desk Examples/RGB-D/fr1_desk.txt
 
+./Examples/Monocular/mono_euroc  Vocabulary/voc_binary_tartan_8u_6.yml.gz Examples/Monocular/EuRoC.yaml /media/zimin/T9/SLAM_Datasets/Euroc /media/zimin/T9/SLAM_Datasets/Euroc/V202.txt
 
 # Acknowledgments
 
