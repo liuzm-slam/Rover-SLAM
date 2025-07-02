@@ -85,6 +85,8 @@ Tracking::Tracking(System *pSys, SPVocabulary* pVoc, FrameDrawer *pFrameDrawer, 
             std::cout << "*Error with the camera parameters in the config file*" << std::endl;
         }
 
+        mspmatcher.SetImageParam(rows_, cols_);
+
         // Load ORB parameters
         bool b_parse_orb = ParseORBParamFile(fSettings);
         if(!b_parse_orb)
@@ -589,7 +591,7 @@ void Tracking::newParameterLoader(Settings *settings) {
     mK_(1,2) = mpCamera->getParameter(3);
 
     // 读取相机2
-    if((mSensor==System::STEREO || mSensor==System::IMU_STEREO || mSensor==System::IMU_RGBD) &&
+    if((mSensor==System::STEREO || mSensor==System::IMU_STEREO || mSensor==System::IMU_RGBD || mSensor==System::RGBD) &&
         settings->cameraType() == Settings::KannalaBrandt){
         mpCamera2 = settings->camera2();
         mpCamera2 = mpAtlas->AddCamera(mpCamera2);
@@ -600,7 +602,7 @@ void Tracking::newParameterLoader(Settings *settings) {
     }
 
     // 读取双目
-    if(mSensor==System::STEREO || mSensor==System::RGBD || mSensor==System::IMU_STEREO || mSensor==System::IMU_RGBD ){
+    if(mSensor==System::STEREO || mSensor==System::RGBD || mSensor==System::IMU_STEREO || mSensor==System::IMU_RGBD){
         mbf = settings->bf();
         mThDepth = settings->b() * settings->thDepth();
     }
@@ -625,8 +627,9 @@ void Tracking::newParameterLoader(Settings *settings) {
     int fIniThFAST = settings->initThFAST();
     int fMinThFAST = settings->minThFAST();
     float fScaleFactor = settings->scaleFactor();
-
-    
+    rows_ = settings->CameraHeight();
+    cols_ = settings->CameraWidth();
+    mspmatcher.SetImageParam(rows_, cols_);
     // mpORBextractorLeft = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
 
     // if(mSensor==System::STEREO || mSensor==System::IMU_STEREO)
@@ -643,7 +646,6 @@ void Tracking::newParameterLoader(Settings *settings) {
     // _superpoint->super_point_config_.onnx_file = "/home/xiao/catkin_ws/src/AirVO/output/superpoint_v1_sim_int32.onnx";
 
     mpExtractorLeft = new SPextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
-    std::cout << "646 ##################################" << std::endl;
     if(mSensor==System::STEREO || mSensor==System::IMU_STEREO)
        mpExtractorRight = new SPextractor(5*nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
 
@@ -833,6 +835,9 @@ bool Tracking::ParseCamParamFile(cv::FileStorage &fSettings)
         mK_(1,1) = fy;
         mK_(0,2) = cx;
         mK_(1,2) = cy;
+
+        rows_ = fSettings["Camera.height"];
+        cols_ = fSettings["Camera.width"];
     }
     else if(sCameraName == "KannalaBrandt8")
     {
@@ -1338,7 +1343,6 @@ bool Tracking::ParseORBParamFile(cv::FileStorage &fSettings)
     {
         return false;
     }
-    std::cout << "1341 ##################################" << std::endl;
     //mpORBextractorLeft = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
     mpExtractorLeft = new SPextractor(5*nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
     if(mSensor==System::STEREO || mSensor==System::IMU_STEREO)
@@ -1656,11 +1660,9 @@ Sophus::SE3f Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, co
         else
             cvtColor(mImGray,mImGray,cv::COLOR_BGRA2GRAY);
     }
-    std::cout << "1659 GrabImageRGBD: " << std::endl;
     // Step 2 ：将深度相机的disparity转为Depth , 也就是转换成为真正尺度下的深度
     if((fabs(mDepthMapFactor-1.0f)>1e-5) && imDepth.type()!=CV_32F)
         imDepth.convertTo(imDepth,CV_32F,mDepthMapFactor);
-    std::cout << "1663 GrabImageRGBD: " << std::endl;
     // Step 3：构造Frame
     // if (mSensor == System::RGBD)
     //     mCurrentFrame = Frame(mImGray,imDepth,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera);
@@ -1671,12 +1673,10 @@ Sophus::SE3f Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, co
     {
         if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET ||(lastID - initID) < mMaxFrames)
         {
-            std::cout << "1111111111111111111111111111111111111111111111111111111" << std::endl;
             mCurrentFrame = Frame(mImGray,imDepth,timestamp,mpExtractorLeft,mpSPVocabulary,mK,mDistCoef,mbf,mThDepth, mpCamera);
             
         }
         else {
-            std::cout << "2222222222222222222222222222222222222222222222222222222" << std::endl;
             mCurrentFrame = Frame(mImGray,imDepth, timestamp,mpExtractorLeft,mpSPVocabulary,mK,mDistCoef,mbf,mThDepth, mpCamera);
         }
     }  
@@ -1690,14 +1690,9 @@ Sophus::SE3f Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, co
     //     else
     //         mCurrentFrame = Frame(mImGray,timestamp,mpIniExtractor,mpSPVocabulary,mpCamera,mDistCoef,mbf,mThDepth,&mLastFrame,*mpImuCalib);
     // }
-
     
-    
-    
-    std::cout << "1669 GrabImageRGBD: " << std::endl;
     mCurrentFrame.mNameFile = filename;
     mCurrentFrame.mnDataset = mnNumDataset;
-    std::cout << "1672 GrabImageRGBD: " << std::endl;
 #ifdef REGISTER_TIMES
     vdORBExtract_ms.push_back(mCurrentFrame.mTimeORB_Ext);
 #endif
@@ -1753,11 +1748,9 @@ Sophus::SE3f Tracking::GrabImageMonocular(const cv::Mat &im, const double &times
         if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET ||(lastID - initID) < mMaxFrames)
         {
             mCurrentFrame = Frame(mImGray,timestamp,mpIniExtractor,mpSPVocabulary,mpCamera,mDistCoef,mbf,mThDepth);
-            std::cout << "1111111111111111111111111111111111111111111111111111111" << std::endl;
         }
         else {
             mCurrentFrame = Frame(mImGray,timestamp,mpExtractorLeft,mpSPVocabulary,mpCamera,mDistCoef,mbf,mThDepth);
-            std::cout << "22222222222222222222222222222222222222222222222222222222" << std::endl;
         }
     }
 
@@ -2241,18 +2234,9 @@ void Tracking::Track()
                     // 根据恒速模型设定当前帧的初始位姿，用最近的普通帧来跟踪当前的普通帧
                     // 通过投影的方式在参考帧中找当前帧特征点的匹配点，优化每个特征点所对应3D点的投影误差即可得到位姿
                     bOK = TrackWithMotionModel();
-                    if(bOK == true){
-                        //cout<<"track with motion model success!"<<endl;
-                    }
                     if(!bOK){
-
-                        cout<<"track with motionModel failed"<<endl;
                         bOK = TrackReferenceKeyFrame();
-                        if(bOK == true){
-                            cout<<"track with Reference keyframe success!"<<endl;
-                        }    
                     }
-                          // 根据恒速模型失败了，只能根据参考关键帧来跟踪
                 }
 
                 // 新增了一个状态RECENTLY_LOST，主要是结合IMU看看能不能拽回来
@@ -3474,8 +3458,7 @@ bool Tracking::TrackWithMotionModel()
         // IMU完成初始化 并且 距离重定位挺久不需要重置IMU，用IMU来估计位姿，没有后面的这那那这的
         PredictStateIMU();
         return true;
-    }
-    else
+    } else
     {
         // 根据之前估计的速度，用恒速模型得到当前帧的初始位姿。
         mCurrentFrame.SetPose(mVelocity * mLastFrame.GetPose());
@@ -3513,9 +3496,7 @@ bool Tracking::TrackWithMotionModel()
         // cv::waitKey(0);
         //nmatches = matcher.SearchByProjection(mCurrentFrame,mLastFrame,2*th,mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR);
         nmatches_sp = mspmatcher.SearchBySP(mCurrentFrame, mLastFrame);
-
         Verbose::PrintMess("Matches with wider search: " + to_string(nmatches_sp), Verbose::VERBOSITY_NORMAL);
-
     }
 
     // 这里不同于ORB-SLAM2的方式
@@ -3526,7 +3507,6 @@ bool Tracking::TrackWithMotionModel()
             return true;
         else
         {
-            cout<<"nmatches_sp = "<<nmatches_sp<<endl;
             return false;
         }
             

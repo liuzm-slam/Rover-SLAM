@@ -388,7 +388,6 @@ Sophus::SE3f System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const
 
         cv::resize(depthmap,imDepthToFeed,settings_->newImSize());
     }
-    std::cout << "391 ORB_SLAM3~~~~~~~~~~~~~~~~~~~~~" << std::endl;
     // Check mode change
     {
         unique_lock<mutex> lock(mMutexMode);
@@ -412,7 +411,6 @@ Sophus::SE3f System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const
             mbDeactivateLocalizationMode = false;
         }
     }
-    std::cout << "415 ORB_SLAM3~~~~~~~~~~~~~~~~~~~~~" << std::endl;
 
     // Check reset
     {
@@ -429,14 +427,12 @@ Sophus::SE3f System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const
             mbResetActiveMap = false;
         }
     }
-    std::cout << "432 ORB_SLAM3~~~~~~~~~~~~~~~~~~~~~" << std::endl;
 
     if (mSensor == System::IMU_RGBD)
         for(size_t i_imu = 0; i_imu < vImuMeas.size(); i_imu++)
             mpTracker->GrabImuData(vImuMeas[i_imu]);
 
     Sophus::SE3f Tcw = mpTracker->GrabImageRGBD(imToFeed,imDepthToFeed,timestamp,filename);
-    std::cout << "439 ORB_SLAM3~~~~~~~~~~~~~~~~~~~~~" << std::endl;
 
     unique_lock<mutex> lock2(mMutexState);
     mTrackingState = mpTracker->mState;

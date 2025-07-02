@@ -356,7 +356,7 @@ int SPmatcher::Fuse(KeyFrame *pKF, Sophus::Sim3f &Scw, const vector<MapPoint *> 
     return nFused;
  }
 
-int SPmatcher::MatchingPoints_onnx(std::vector<cv::Point2f> kpts0, std::vector<cv::Point2f> kpts1, float* desc0,float* desc1){
+/*int SPmatcher::MatchingPoints_onnx(std::vector<cv::Point2f> kpts0, std::vector<cv::Point2f> kpts1, float* desc0,float* desc1){
     int rows = 300;
     int cols = 400;
     auto normal_kpts0 = featureMatcher->Matcher_PreProcess(kpts0 , rows , cols);
@@ -369,12 +369,14 @@ int SPmatcher::MatchingPoints_onnx(std::vector<cv::Point2f> kpts0, std::vector<c
     vnMatches12 = std::vector<int>(normal_kpts0.size(), -1);
     size = featureMatcher->Matcher_PostProcess_fused(output, kpts0 , kpts1, vnMatches12);
     return size;
-}
+}*/
 
 int SPmatcher::MatchingPoints_onnx(std::vector<cv::Point2f> kpts0, std::vector<cv::Point2f> kpts1, cv::Mat desc0,cv::Mat desc1, std::vector<int>& vnMatches12){
     vnMatches12.resize(kpts0.size(),-1);
-    int rows = 300;//需要修改！
-    int cols = 400;
+    int rows = rows_;
+    int cols = cols_;
+    // int rows = f2.imgLeft.rows;
+    // int cols = f2.imgLeft.cols;
 
     auto normal_kpts0 = featureMatcher->Matcher_PreProcess(kpts0 , rows , cols);
     auto normal_kpts1 = featureMatcher->Matcher_PreProcess(kpts1 , rows , cols);
@@ -411,8 +413,10 @@ int SPmatcher::MatchingPoints_onnx(std::vector<cv::Point2f> kpts0, std::vector<c
 
 int SPmatcher::MatchingPoints_onnx(std::vector<cv::KeyPoint> kpts0, const std::vector<cv::KeyPoint> kpts1, cv::Mat desc0, const cv::Mat desc1, std::vector<int>& vnMatches12){
     vnMatches12.resize(kpts0.size(),-1);
-    int rows = 300;//需要修改！
-    int cols = 400;
+    int rows = rows_;
+    int cols = cols_;
+    // int rows = f2.imgLeft.rows;
+    // int cols = f2.imgLeft.cols;
     std::vector<cv::Point2f> kpts_pf0, kpts_pf1;
     for(const cv::KeyPoint& keypoint : kpts0){
         kpts_pf0.emplace_back(keypoint.pt);
@@ -426,6 +430,7 @@ int SPmatcher::MatchingPoints_onnx(std::vector<cv::KeyPoint> kpts0, const std::v
 
     int rows0 = desc0.rows;
     int cols0 = desc0.cols;
+
     float* descriptors_data0 = new float[rows0 * cols0];
     for (int i = 0 ; i < rows0; i++){
         const float* row_data = desc0.ptr<float>(i);
@@ -436,6 +441,7 @@ int SPmatcher::MatchingPoints_onnx(std::vector<cv::KeyPoint> kpts0, const std::v
 
     int rows1 = desc1.rows;
     int cols1 = desc1.cols;
+
     float* descriptors_data1 = new float[rows1 * cols1];
     for (int i = 0 ; i < rows1; i++){
         const float* row_data = desc1.ptr<float>(i);
@@ -453,15 +459,16 @@ int SPmatcher::MatchingPoints_onnx(std::vector<cv::KeyPoint> kpts0, const std::v
     return size;
 }
 
-
-int SPmatcher::MatchingPoints_onnx(Frame &f1, Frame &f2, vector<int> &vnMatches12)//在C++中，默认参数值只能在函数的声明或定义中的一处给定，而不能同时在两者中都给定。通常，我们在函数的声明中给定默认参数，然后在函数定义中省略默认参数值。
+//在C++中，默认参数值只能在函数的声明或定义中的一处给定，而不能同时在两者中都给定。通常，我们在函数的声明中给定默认参数，然后在函数定义中省略默认参数值。
+int SPmatcher::MatchingPoints_onnx(Frame &f1, Frame &f2, vector<int> &vnMatches12)
 {   
     bool outlier_rejection=false;
     vnMatches12.resize(f1.mvKeys.size(),-1);
     // int rows = 240;//改
     // int cols = 320;//改
-    int rows = f2.imgLeft.rows;
-    int cols = f2.imgLeft.cols;
+    int rows = rows_;
+    int cols = cols_;
+
     // Frame f3; Frame f4;
     // MatchingPoints_onnx(f3,f4,vnMatches12);
     std::vector<cv::Point2f> kpts1, kpts2;
@@ -474,26 +481,8 @@ int SPmatcher::MatchingPoints_onnx(Frame &f1, Frame &f2, vector<int> &vnMatches1
         kpts2.emplace_back(keypoint.pt);
     }
 
-    // for (const cv::KeyPoint& point : f1.mvKeys) {
-    //     cv::circle(f1.imgLeft, point.pt, 2,cv::Scalar(0, 0, 255), 0.5);
-    // }
-    // for(const cv::KeyPoint& point : f2.mvKeys) {
-    //     cv::circle(f2.imgLeft, point.pt, 2, cv::Scalar(0, 0, 255), 0.5);
-    // }
-    // int total_width = f1.imgLeft.cols + f2.imgLeft.cols;
-    // int max_height = std::max(f1.imgLeft.rows, f2.imgLeft.rows);
-    // cv::Mat combined_image(max_height, total_width, f2.imgLeft.type());
-    // f1.imgLeft.copyTo(combined_image(cv::Rect(0, 0, f1.imgLeft.cols, f1.imgLeft.rows)));
-    // f2.imgLeft.copyTo(combined_image(cv::Rect(f2.imgLeft.cols, 0, f2.imgLeft.cols, f2.imgLeft.rows)));
-    // cv::imshow("Feature Points", combined_image);
-    // cv::waitKey(0);
-
-
     auto normal_kpts1 = featureMatcher->Matcher_PreProcess(kpts1 , rows , cols);
     auto normal_kpts2 = featureMatcher->Matcher_PreProcess(kpts2 , rows , cols);
-
-    // std::vector<cv::DMatch>  matches;
-    // matches.clear();
     
     int rows1 = f1.mDescriptors.rows;
     int cols1 = f1.mDescriptors.cols;
@@ -505,17 +494,6 @@ int SPmatcher::MatchingPoints_onnx(Frame &f1, Frame &f2, vector<int> &vnMatches1
         }
     }
 
-    // int length = sizeof(descriptors_data1)/sizeof(float);
-    // for(int i = 0 ; i < length+100; i++)
-    // {
-    //     cout<<descriptors_data1[i]<<std::endl;
-    // }
-    // for(int i = 0 ; i < 256 ; i++)
-    // {
-    //     cout<<f1.mDescriptors.at<float>(0,i)<<" ";
-    // }
-    // std::cout<<endl;
-
     int rows2 = f2.mDescriptors.rows;
     int cols2 = f2.mDescriptors.cols;
     float* descriptors_data2 = new float[rows2 * cols2];
@@ -526,18 +504,10 @@ int SPmatcher::MatchingPoints_onnx(Frame &f1, Frame &f2, vector<int> &vnMatches1
         }
     }
     std::vector<Ort::Value> output = featureMatcher->Matcher_Inference(normal_kpts1, normal_kpts2, descriptors_data1, descriptors_data2);
+
     std::pair<std::vector<cv::Point2f>, std::vector<cv::Point2f>> output_end;
     int size  = featureMatcher->Matcher_PostProcess_fused(output, kpts1 , kpts2, vnMatches12);
-    // if(outlier_rejection){
-    //     std::vector<uchar> inliers;
-    //     cv::findFundamentalMat(output_end.first, output_end.second, cv::FM_RANSAC, 3, 0.99, inliers);
-    //     int j = 0;
-    //     for(int i = 0; i < output_end.first.size(); i++){
-    //         if(inliers[i]){
 
-    //         }
-    //     }
-    // }
     return size;
 }
 
@@ -964,7 +934,7 @@ int SPmatcher::SearchByProjection(Frame &CurrentFrame, KeyFrame *pKF, const set<
     
 }
 
-int SPmatcher::SearchBySP(KeyFrame *pKF, Frame &F, std::vector<MapPoint*> &vpMapPointMatches)
+/*int SPmatcher::SearchBySP(KeyFrame *pKF, Frame &F, std::vector<MapPoint*> &vpMapPointMatches)
 {
     const std::vector<MapPoint*> vpMapPointsKF = pKF->GetMapPointMatches();
     vpMapPointMatches = std::vector<MapPoint*>(F.N,static_cast<MapPoint*>(NULL));
@@ -991,6 +961,11 @@ int SPmatcher::SearchBySP(KeyFrame *pKF, Frame &F, std::vector<MapPoint*> &vpMap
     }
 
     return nmatches;
+}*/
+
+void SPmatcher::SetImageParam(const int rows, const int cols) {
+    rows_ = rows;
+    cols_ = cols;
 }
 
 int SPmatcher::SearchBySP(Frame &F, const std::vector<MapPoint*> &vpMapPoints)
@@ -1360,7 +1335,7 @@ int SPmatcher::SearchForTriangulation(KeyFrame *pKF1, KeyFrame *pKF2,
     // vector<int> vnMatches12_res = vector<int>((*pKF1).mvKeys.size(),-1);
     // vector<int> vMatchedDistance((*pKF1).mvKeys.size(), INT_MAX);
     // vector<int> vnMatches21((*pKF2).mvKeys.size(), -1);
-    
+
     // //cv::Mat Cw = pKF1->GetCameraCenter();
     // cv::Mat Cw = (cv::Mat_<float>(3, 1) << pKF1->GetCameraCenter()(0), pKF1->GetCameraCenter()(1), pKF1->GetCameraCenter()(2));
     // //cv::Mat R2w = pKF2->GetRotation();

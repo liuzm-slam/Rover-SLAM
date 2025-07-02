@@ -243,36 +243,29 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeSt
     :mpcpi(NULL),mpORBvocabulary(voc),mpORBextractorLeft(extractor),mpORBextractorRight(static_cast<ORBextractor*>(NULL)),
      mTimeStamp(timeStamp), mK(K.clone()), mK_(Converter::toMatrix3f(K)),mDistCoef(distCoef.clone()), mbf(bf), mThDepth(thDepth),
      mImuCalib(ImuCalib), mpImuPreintegrated(NULL), mpPrevFrame(pPrevF), mpImuPreintegratedFrame(NULL), mpReferenceKF(static_cast<KeyFrame*>(NULL)), mbIsSet(false), mbImuPreintegrated(false),
-     mpCamera(pCamera),mpCamera2(nullptr), mbHasPose(false), mbHasVelocity(false)
+     mpCamera(pCamera),mpCamera2(nullptr), mbHasPose(false), mbHasVelocity(false), imgLeft(imGray)
 {
     // Frame ID
     // Step 1 帧的ID 自增
     mnId=nNextId++;
-    std::cout << (mpORBextractorLeft == nullptr) << std::endl;
     // Scale Level Info
     // Step 2 计算图像金字塔的参数 
 	// 获取图像金字塔的层数
     mnScaleLevels = mpORBextractorLeft->GetLevels();
-    std::cout << "256 Frame" << std::endl;
     // 获得层与层之间的缩放比
     mfScaleFactor = mpORBextractorLeft->GetScaleFactor();
-    std::cout << "259 Frame" << std::endl;
     // 计算上面缩放比的对数
     mfLogScaleFactor = log(mfScaleFactor);
 
-    std::cout << "261 Frame" << std::endl;
     // 获取每层图像的缩放因子
     mvScaleFactors = mpORBextractorLeft->GetScaleFactors();
     // 同样获取每层图像缩放因子的倒数
     mvInvScaleFactors = mpORBextractorLeft->GetInverseScaleFactors();
 
-    std::cout << "267 Frame" << std::endl;
-
     // 高斯模糊的时候，使用的方差
     mvLevelSigma2 = mpORBextractorLeft->GetScaleSigmaSquares();
     // 获取sigma^2的倒数
     mvInvLevelSigma2 = mpORBextractorLeft->GetInverseScaleSigmaSquares();
-    std::cout << "268 Frame" << std::endl;
     // ORB extractionExtractKeyPoints
 #ifdef REGISTER_TIMES
     std::chrono::steady_clock::time_point time_StartExtORB = std::chrono::steady_clock::now();
@@ -362,37 +355,29 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeSt
     :mpcpi(NULL),mpSPvocabulary(voc),mpExtractorLeft(mpORBextractorLeft),mpExtractorRight(static_cast<SPextractor*>(NULL)),
      mTimeStamp(timeStamp), mK(K.clone()), mK_(Converter::toMatrix3f(K)),mDistCoef(distCoef.clone()), mbf(bf), mThDepth(thDepth),
      mImuCalib(ImuCalib), mpImuPreintegrated(NULL), mpPrevFrame(pPrevF), mpImuPreintegratedFrame(NULL), mpReferenceKF(static_cast<KeyFrame*>(NULL)), mbIsSet(false), mbImuPreintegrated(false),
-     mpCamera(pCamera),mpCamera2(nullptr), mbHasPose(false), mbHasVelocity(false)
+     mpCamera(pCamera),mpCamera2(nullptr), mbHasPose(false), mbHasVelocity(false) ,imgLeft(imGray)
 {
-    std::cout << "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ " << std::endl;
     // Frame ID
     // Step 1 帧的ID 自增
     mnId=nNextId++;
-    std::cout << (mpExtractorLeft == nullptr) << std::endl;
     // Scale Level Info
     // Step 2 计算图像金字塔的参数 
 	// 获取图像金字塔的层数
     mnScaleLevels = mpExtractorLeft->GetLevels();
-    std::cout << "256 Frame" << std::endl;
     // 获得层与层之间的缩放比
     mfScaleFactor = mpExtractorLeft->GetScaleFactor();
-    std::cout << "259 Frame" << std::endl;
     // 计算上面缩放比的对数
     mfLogScaleFactor = log(mfScaleFactor);
 
-    std::cout << "261 Frame" << std::endl;
     // 获取每层图像的缩放因子
     mvScaleFactors = mpExtractorLeft->GetScaleFactors();
     // 同样获取每层图像缩放因子的倒数
     mvInvScaleFactors = mpExtractorLeft->GetInverseScaleFactors();
 
-    std::cout << "267 Frame" << std::endl;
-
     // 高斯模糊的时候，使用的方差
     mvLevelSigma2 = mpExtractorLeft->GetScaleSigmaSquares();
     // 获取sigma^2的倒数
     mvInvLevelSigma2 = mpExtractorLeft->GetInverseScaleSigmaSquares();
-    std::cout << "268 Frame" << std::endl;
     // ORB extraction
 #ifdef REGISTER_TIMES
     std::chrono::steady_clock::time_point time_StartExtORB = std::chrono::steady_clock::now();

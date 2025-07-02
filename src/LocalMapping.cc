@@ -526,21 +526,11 @@ void LocalMapping::CreateNewMapPoints()
         nn=10; //30
     // Step 1：在当前关键帧的共视关键帧中找到共视程度最高的nn帧相邻关键帧
     vector<KeyFrame*> vpNeighKFs = mpCurrentKeyFrame->GetBestCovisibilityKeyFrames(nn);
-    //cout<<"step4.1: "<<mlNewKeyFrames.size()<<endl;
-    // imu模式下在附近添加更多的帧进来
-    // if (mbInertial)
-    // {
-    //     KeyFrame* pKF = mpCurrentKeyFrame;
-    //     int count=0;
-    //     // 在总数不够且上一关键帧存在，且添加的帧没有超过总数时
-    //     while((vpNeighKFs.size()<=nn)&&(pKF->mPrevKF)&&(count++<nn))
-    //     {
-    //         vector<KeyFrame*>::iterator it = std::find(vpNeighKFs.begin(), vpNeighKFs.end(), pKF->mPrevKF);
-    //         if(it==vpNeighKFs.end())
-    //             vpNeighKFs.push_back(pKF->mPrevKF);
-    //         pKF = pKF->mPrevKF;
-    //     }
-    // }
+
+    if(vpNeighKFs.empty())
+    {
+        return;
+    }
 
     float th = 0.6f;
     // 特征点匹配配置 最小距离 < 0.6*次小距离，比较苛刻了。不检查旋转
@@ -574,7 +564,6 @@ void LocalMapping::CreateNewMapPoints()
     // Search matches with epipolar restriction and triangulate
 
     // Step 2：遍历相邻关键帧vpNeighKFs
-
     float matchsum = 0;
     for(size_t i=0; i<vpNeighKFs.size(); i++)
     {
@@ -943,104 +932,16 @@ void LocalMapping::CreateNewMapPoints()
         }
          //cout<<"step4.5: "<<mlNewKeyFrames.size()<<endl;
     }
-    
+    if (vpNeighKFs.empty() || matchsum == 0)
+    {
+        return;
+    }
     float matchmean = matchsum/vpNeighKFs.size();
 
-    
     mpTracker->lastmatchtrack = matchmean;
     mpTracker->mpExtractorLeft->lastmatchnum = matchmean;
-    mpTracker->mpIniExtractor->lastmatchnum = matchmean;
-    
+    // mpTracker->mpIniExtractor->lastmatchnum = matchmean;
 }
-
-// Eigen::Matrix<double, 6, 6> LocalMapping::Initinformation(const vector<Eigen::Vector3d>& pointSet,double fx, double fy){
-//     vector<Eigen::Vector3d> selectedPoints;
-//     Eigen::MatrixXd informationMatrix = Eigen::MatrixXd::Zero(6, 6);
-//     for(int i = 0 ; i < 6 ; ++i){
-//         double maxValue = -numeric_limits<double>::infinity();
-//         int maxIndex = -1;
-//         for(int j = 0 ; j < pointSet.size(); ++j){
-//             double sum = 0.0;
-//             Sophus::SE3d pose;
-//             Eigen::Matrix<double, 2, 6> J = computeJacobian(pointSet[j],fx,fy, pose);
-//             for(int row = 0; row < J.rows(); ++row)
-//             {
-//                 sum += abs(J(row, i));
-//             }
-//             if(sum >= maxValue && find(selectedPoints.begin(), selectedPoints.end(), pointSet[j]) == selectedPoints.end())
-//             {
-//                 maxValue = sum;
-//                 maxIndex = j;
-//             }
-//         }
-//         Sophus::SE3d pose;
-//         Eigen::VectorXd selectedPoint = pointSet[maxIndex];
-//         selectedPoints.push_back(selectedPoint);
-//         Eigen::Matrix<double, 2, 6> J = computeJacobian(selectedPoint, fx, fy, pose);
-//         double sigma_squared = 1;
-//         Eigen::MatrixXd informationOfSelectedPoint = J.transpose()*sigma_squared*J;
-//         informationMatrix += informationOfSelectedPoint;
-        
-//     }
-//     return informationMatrix;
-// }
-
-// Eigen::MatrixXd computeJacobian(const Eigen::Vector3d& p, double fx, double fy, Sophus::SE3d &pose){
-//     double X = p(0);
-//     double Y = p(1);
-//     double Z = p(2);
-
-//     Eigen::Vector3d pc = pose*p;
-//     double inv_z = 1.0 / pc[2];
-//     double inv_z2 = inv_z * inv_z;
-//     Eigen::Matrix<double, 2, 6> J;
-//     J << -fx * inv_z, 0, fx*pc[0]*inv_z2, fx*pc[0]*pc[1]*inv_z2,-fx-fx*pc[0]*pc[0]*inv_z2, fx*pc[1]*inv_z,0,
-//     -fy*inv_z, fy*pc[1]*inv_z, fy+fy*pc[1]*inv_z2, -fy*pc[0]*pc[1]*inv_z2, -fy*pc[0]*inv_z;
-//     return J;
-// }
-
-// double ComputeMuInfo()
-// {
-
-// }
-// MapPoint* SelectMostInformativePoint(vector<MapPoint>& mapPoints,
-//                                     const vector<MapPoint>& selectedPoints,
-//                                     const Eigen::Vector3d& border) {
-
-//     double maxMuInfo = -std::numeric_limits<double>::infinity();
-//     MapPoint* bestPoint;
-//     for (auto& mapPoint : mapPoints) {
-//         Eigen::Vector3f Pos = mapPoint.GetWorldPos();//需要添加将该地图点投影到当前帧上的代码
-//         double muInfo = ComputeMuInfo();
-//         if(muInfo > maxMuInfo){
-//             maxMuInfo = muInfo;
-//             bestPoint = &mapPoint;
-//         }
-//     }
-//     // 返回地图点应该也需要改进，全部变为地址
-//     return bestPoint;
-// }
-
-// vector<Eigen::Vector3d> LocalMapping::InfoPointSelection(const vector<MapPoint>& mapPoints, int M, double fx, double fy)
-// {
-//     vector<MapPoint> selectedPoints;
-//     Eigen::MatrixXd initinformatrix =  Initinformation(mapPoints, fx,fy);
-//     Eigen::Vector3d border(100, 100, 0);
-//     Eigen::Vector3d bestPoint;
-
-//     while(selectedPoints.size() < M){
-//         MapPoint mostInformativePoint = SelectMostInformativePoint(mapPoints, selectedPoints, border);
-//     }
-//     double maxFunctionValue = -std::numeric_limits<double>::infinity();
-//     for(const auto& mapPoint : mapPoints){
-//         double functionValue = ComputeFunctionValue();
-//         if(functionValue > maxFunctionValue){
-//             maxFunctionValue = functionValue;
-//             bestPoint = mapPoint;
-//         }
-//     }
-//     return bestPoint;
-// } 
 
 /**
  * @brief 检查并融合当前关键帧与相邻帧（两级相邻）重复的MapPoints

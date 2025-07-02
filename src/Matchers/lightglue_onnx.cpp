@@ -395,86 +395,27 @@ int LightGlueDecoupleOnnxRunner::Matcher_PostProcess(Configuration cfg , std::ve
 
 int LightGlueDecoupleOnnxRunner::Matcher_PostProcess_fused(std::vector<Ort::Value>& output, std::vector<cv::Point2f> kpts0, std::vector<cv::Point2f> kpts1, std::vector<int>& vnMatches12)
 {
-    bool outlier_rejection = false;
-    //std::pair<std::vector<cv::Point2f>, std::vector<cv::Point2f>> result;
     int size = 0;
     try
     {
         // load date from tensor
         std::vector<int64_t> matches_Shape = output[0].GetTensorTypeAndShapeInfo().GetShape();
-        int64_t *matches = (int64_t *)output[0].GetTensorMutableData<void>();
-        //printf("[RESULT INFO] matches Shape : (%ld , %ld)\n", matches_Shape[0], matches_Shape[1]);
+        int64_t* matches = (int64_t*)output[0].GetTensorMutableData<void>();
 
         std::vector<int64_t> mscore_Shape = output[1].GetTensorTypeAndShapeInfo().GetShape();
-        float *mscores = (float *)output[1].GetTensorMutableData<void>();
-        //printf("[RESULT INFO] mscore Shape : (%ld )\n", mscore_Shape[0]);
-
-        // Process kpts0 and kpts1
-        // std::vector<cv::Point2f> kpts0_f, kpts1_f;
-        // kpts0_f.reserve(kpts0.size());
-        // kpts1_f.reserve(kpts1.size());
-        // //scales[0] =1;
-        // // scales[1] = 1;
-        // for (int i = 0; i < kpts0.size(); i++)
-        // {
-        //     kpts0_f.emplace_back(cv::Point2f(
-        //         (kpts0[i].x + 0.5) / scales[0] - 0.5, (kpts0[i].y + 0.5) / scales[0] - 0.5));
-        // }
-        // for (int i = 0; i < kpts1.size(); i++)
-        // {
-        //     kpts1_f.emplace_back(cv::Point2f(
-        //         (kpts1[i].x + 0.5) / scales[1] - 0.5, (kpts1[i].y + 0.5) / scales[1] - 0.5));
-        // }
-
-        // // get the good match
-        // std::vector<cv::Point2f> m_kpts0, m_kpts1;
-        // m_kpts0.reserve(matches_Shape[0]);
-        // m_kpts1.reserve(matches_Shape[0]);
-
-        // std::vector<cv::DMatch> matchesD;
-        // matchesD.clear();
-
+        float* mscores = (float*)output[1].GetTensorMutableData<void>();
         for (int i = 0; i < matches_Shape[0]; i++)
         {
-            // if (mscores[i] > this->matchThresh)
-            // {
-            //     m_kpts0.emplace_back(kpts0_f[matches[i * 2]]);
-            //     m_kpts1.emplace_back(kpts1_f[matches[i * 2 + 1]]);
-            // }
-                        
+            // std::cout << mscores[i] << ", " << this->matchThresh << std::endl;
             if (mscores[i] > this->matchThresh)
             {
-                size++;
-                //matchesD.emplace_back(matches[i*2], matches[i*2+1], mscores[i]);
-                vnMatches12[matches[i * 2]] = matches[i * 2 +1];//本来是vnMatches[i]，错了！！！！
-                //m_kpts0.emplace_back(kpts0[matches[i * 2]]);//emplace_back() 更直接的方式向容器中添加元素，并且在添加元素时会自动调用构造函数
-                //m_kpts1.emplace_back(kpts1[matches[i * 2 + 1]]);
+                size += 1;
+                vnMatches12[matches[i * 2]] = matches[i * 2 + 1]; //本来是vnMatches[i]，错了！！！！
             }
         }
-
-    //     if(outlier_rejection){
-    //         std::vector<uchar> inliers;
-    //         cv::findFundamentalMat(m_kpts0, m_kpts1, cv::FM_RANSAC, 3, 0.99, inliers);
-    //         int j = 0;
-    //         for(int i = 0; i < matchesD.size(); i++){
-    //             if(inliers[i]){
-    //                 matchesD[j++] = matchesD[i];
-    //             }
-    //         }
-    //         matchesD.resize(j);
-        
-    // }
-
-
-        //std::cout << "[RESULT INFO] matches Size : " << m_kpts1.size() << std::endl;
-        
-        // result.first = m_kpts0;
-        // result.second = m_kpts1;
-
-        //std::cout << "[INFO] Postprocessing operation completed successfully" << std::endl;
         return size;
     }
-    catch (const std::exception &ex)
+    catch (const std::exception& ex)
     {
         std::cerr << "[ERROR] PostProcess failed : " << ex.what() << std::endl;
         return size;

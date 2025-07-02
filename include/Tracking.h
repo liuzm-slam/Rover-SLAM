@@ -318,6 +318,9 @@ protected:
     // and inserted from just one frame. Far points requiere a match in two keyframes.
     float mThDepth;
 
+    int rows_;
+    int cols_;
+
     // For RGB-D inputs only. For some datasets (e.g. TUM) the depthmap values are scaled.
     float mDepthMapFactor;
 

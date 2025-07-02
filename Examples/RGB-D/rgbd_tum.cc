@@ -57,7 +57,6 @@ int main(int argc, char **argv)
         cerr << endl << "Different number of images for rgb and depth." << endl;
         return 1;
     }
-    std::cout << "orbslam2!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
     ORB_SLAM3::System SLAM(argv[1],argv[2],ORB_SLAM3::System::RGBD,true);
     float imageScale = SLAM.GetImageScale();
@@ -78,14 +77,12 @@ int main(int argc, char **argv)
         imRGB = cv::imread(string(argv[3])+"/"+vstrImageFilenamesRGB[ni],cv::IMREAD_UNCHANGED); //,cv::IMREAD_UNCHANGED);
         imD = cv::imread(string(argv[3])+"/"+vstrImageFilenamesD[ni],cv::IMREAD_UNCHANGED); //,cv::IMREAD_UNCHANGED);
         double tframe = vTimestamps[ni];
-
         if(imRGB.empty())
         {
             cerr << endl << "Failed to load image at: "
                  << string(argv[3]) << "/" << vstrImageFilenamesRGB[ni] << endl;
             return 1;
         }
-
         if(imageScale != 1.f)
         {
             int width = imRGB.cols * imageScale;
@@ -99,10 +96,8 @@ int main(int argc, char **argv)
 #else
         std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
 #endif
-        std::cout << "1 ########################" << std::endl;
         // Pass the image to the SLAM system
         SLAM.TrackRGBD(imRGB,imD,tframe);
-        std::cout << "2 ########################" << std::endl;
 #ifdef COMPILEDWITHC11
         std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
 #else
@@ -112,7 +107,6 @@ int main(int argc, char **argv)
         double ttrack= std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1).count();
 
         vTimesTrack[ni]=ttrack;
-
         // Wait to load the next frame
         double T=0;
         if(ni<nImages-1)

@@ -49,6 +49,9 @@ namespace ORB_SLAM3
         int SearchBySP(KeyFrame *pKF, Frame &F, std::vector<MapPoint*> &vpMapPointMatches);
         int SearchBySP(Frame &F, const std::vector<MapPoint*> &vpMapPoints);
         int SearchBySP(Frame &CurrentFrame, Frame &LastFrame);
+
+        void SetImageParam(const int rows, const int cols);
+
         int SearchByProjection(KeyFrame* pKF, Sophus::Sim3f &Scw, const vector<MapPoint*> &vpPoints,const std::vector<KeyFrame*> &vpPointsKFs,
                                        vector<MapPoint*> &vpMatched, int th, float ratioHamming);
         static float DescriptorDistance_sp(const cv::Mat &a, const cv::Mat &b);
@@ -59,7 +62,7 @@ namespace ORB_SLAM3
         int MatchingPoints_onnx(Frame &f1, Frame &f2,vector<int> &vnMatches12);
         int MatchingPoints(Frame &f1, Frame &f2, vector<cv::Point2f> &vbPrevMatched,vector<int> &vnMatches12, bool outlier_rejection=false);
         int MatchingPoints_onnx(std::vector<cv::KeyPoint> kpts0, const std::vector<cv::KeyPoint> kpts1, cv::Mat desc0,const cv::Mat desc1, std::vector<int>& vnMatches12);
-        int MatchingPoints_onnx(std::vector<cv::Point2f> kpts0, std::vector<cv::Point2f> kpts1, float* desc0, float* desc1);
+        // int MatchingPoints_onnx(std::vector<cv::Point2f> kpts0, std::vector<cv::Point2f> kpts1, float* desc0, float* desc1);
         int MatchingPoints_onnx(std::vector<cv::Point2f> kpts0, std::vector<cv::Point2f> kpts1, cv::Mat desc0, cv::Mat desc1, std::vector<int>& vnMatches12);
         Eigen::Matrix<double, 259, Eigen::Dynamic> NormalizeKeypoints(
             const Eigen::Matrix<double, 259, Eigen::Dynamic> &features, int width, int height
@@ -138,10 +141,11 @@ namespace ORB_SLAM3
     private:
         // SuperGlue superglue;
         // SuperGlueConfig _superglue_config;
-        
+        int rows_ = 0;
+        int cols_ = 0;
     };
 
-    typedef std::shared_ptr<SPmatcher> SPmatcherPtr;
+    // typedef std::shared_ptr<SPmatcher> SPmatcherPtr;
 
 }// namespace ORB_SLAM
 

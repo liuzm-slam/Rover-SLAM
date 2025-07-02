@@ -139,7 +139,7 @@ namespace ORB_SLAM3
         
     };
 
-    typedef std::shared_ptr<SPmatcher> SPmatcherPtr;
+    // typedef std::shared_ptr<SPmatcher> SPmatcherPtr;
 
 }// namespace ORB_SLAM
 

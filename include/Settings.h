@@ -100,6 +100,9 @@ namespace ORB_SLAM3 {
         float minThFAST() {return minThFAST_;}
         float scaleFactor() {return scaleFactor_;}
 
+        int CameraHeight() {return rows_;}
+        int CameraWidth() {return cols_;}
+
         float keyFrameSize() {return keyFrameSize_;}
         float keyFrameLineWidth() {return keyFrameLineWidth_;}
         float graphLineWidth() {return graphLineWidth_;}
@@ -165,6 +168,7 @@ namespace ORB_SLAM3 {
         GeometricCamera* calibration1_, *calibration2_;   //Camera calibration
         GeometricCamera* originalCalib1_, *originalCalib2_;
         std::vector<float> vPinHoleDistorsion1_, vPinHoleDistorsion2_;
+        int rows_, cols_;
 
         cv::Size originalImSize_, newImSize_;
         float fps_;

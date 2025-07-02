@@ -62,7 +62,7 @@ ${PROJECT_SOURCE_DIR}/include
 ${PROJECT_SOURCE_DIR}/include/CameraModels
 ${PROJECT_SOURCE_DIR}/Thirdparty/Sophus
 ${EIGEN3_INCLUDE_DIR}
-/home/zimin/ThirdParty/onnxruntime-linux-x64-gpu-1.16.3/include
+/home/lzm/Software/onnxruntime-linux-x64-gpu-1.16.3/include
 ${CUDA_INCLUDE_DIRS}
 ${Boost_INCLUDE_DIRS}
 ${YAML_CPP_INCLUDE_DIR}
@@ -160,7 +160,7 @@ ${PROJECT_SOURCE_DIR}/Thirdparty/DBoW3/lib/libDBoW3.so
 ${PROJECT_SOURCE_DIR}/Thirdparty/g2o/lib/libg2o.so
 -lboost_serialization
 -lcrypto
-/home/zimin/ThirdParty/onnxruntime-linux-x64-gpu-1.16.3/lib/libonnxruntime.so
+/home/lzm/Software/onnxruntime-linux-x64-gpu-1.16.3/lib/libonnxruntime.so
 )
 
 

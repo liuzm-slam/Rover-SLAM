@@ -527,8 +527,10 @@ int SPextractor::operator()( InputArray _image,  vector<KeyPoint>& _keypoints,
     Mat descriptors;
     //两种模式，一种单层图像提取特征，一种多层金字塔提取特征
     int res = -1;
-    if (nlevels == 1) 
+    if (nlevels == 1)
+    {
         res = ExtractSingleLayer(image, _keypoints, _descriptors);
+    }
     else{
         ComputePyramid(image);
         res = ExtractMultiLayers(image, _keypoints, descriptors);

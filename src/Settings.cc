@@ -252,6 +252,9 @@ void Settings::readCamera1(cv::FileStorage &fSettings)
             vPinHoleDistorsion1_[1] = readParameter<float>(fSettings, "Camera1.k2", found);
             vPinHoleDistorsion1_[2] = readParameter<float>(fSettings, "Camera1.p1", found);
             vPinHoleDistorsion1_[3] = readParameter<float>(fSettings, "Camera1.p2", found);
+
+            rows_ = readParameter<int>(fSettings, "Camera.height", found);
+            cols_ = readParameter<int>(fSettings, "Camera.width", found);
         }
 
         // Check if we need to correct distortion from the images
