@@ -5,6 +5,8 @@ IF(NOT CMAKE_BUILD_TYPE)
   SET(CMAKE_BUILD_TYPE Release)
 ENDIF()
 
+find_package(pybind11 REQUIRED)
+
 MESSAGE("Build type: " ${CMAKE_BUILD_TYPE})
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -Wall   -O3") #其中${CMAKE_C_FLAGS}表示先前在CMake中定义的C语言编译器标志，而-Wall -O3是额外添加到这个变量中的编译器标志。
@@ -55,6 +57,7 @@ find_package(Boost REQUIRED)
 find_package(Gflags REQUIRED)
 find_package(Glog REQUIRED)
 # find_package(realsense2)
+find_package(Python3 REQUIRED COMPONENTS Development)
 
 include_directories(
 ${PROJECT_SOURCE_DIR}
@@ -70,6 +73,7 @@ ${Pangolin_INCLUDE_DIRS}
 ${GFLAGS_INCLUDE_DIRS}
 ${GLOG_INCLUDE_DIRS}
 ${OpenCV_INCLUDE_DIRS}
+${Python3_INCLUDE_DIRS}
 )
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
@@ -161,12 +165,8 @@ ${PROJECT_SOURCE_DIR}/Thirdparty/g2o/lib/libg2o.so
 -lboost_serialization
 -lcrypto
 /home/lzm/Software/onnxruntime-linux-x64-gpu-1.16.3/lib/libonnxruntime.so
+${Python3_LIBRARIES}
 )
-
-
-# Build examples
-
-
 
 #Monocular examples
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/Monocular)
@@ -212,3 +212,12 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/RGB-D)
 add_executable(rgbd_tum
         Examples/RGB-D/rgbd_tum.cc)
 target_link_libraries(rgbd_tum ${PROJECT_NAME})
+
+add_library(orbslam2_py MODULE Examples/RGB-D/orbslam2_wrapper.cc)
+target_link_libraries(orbslam2_py
+        ${PROJECT_NAME}
+        pybind11::module
+)
+
+# Fix module name for Python import
+set_target_properties(orbslam2_py PROPERTIES PREFIX "")
