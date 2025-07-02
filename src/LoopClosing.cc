@@ -641,7 +641,6 @@ bool LoopClosing::NewDetectCommonRegions()
         // mnLoopNumCoincidences是成功几何验证的帧数，超过3就认为最终验证成功（mbMergeDetected=true），不超过继续进行时序验证
         //mbMergeDetected = DetectCommonRegionsFromBoW(vpMergeBowCand, mpMergeMatchedKF, mpMergeLastCurrentKF, mg2oMergeSlw, mnMergeNumCoincidences, mvpMergeMPs, mvpMergeMatchedMPs);
         mbMergeDetected = DetectCommonRegionsFromBoW_sp(vpMergeBowCand, mpMergeMatchedKF, mpMergeLastCurrentKF, mg2oMergeSlw, mnMergeNumCoincidences, mvpMergeMPs, mvpMergeMatchedMPs);
-        cout<<"vpMergeBowCand: "<<vpMergeBowCand.size()<<endl;
     }
 
 #ifdef REGISTER_TIMES
